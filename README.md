@@ -8,11 +8,11 @@ A small (1kb gzipped) router middleware for CSA (client-side app).
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router"></script>
+<script src="//unpkg.com/van-router@0.0.4"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.0.4/index.esm.js";
   // code here
 </script>
 ```
@@ -26,7 +26,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.0.4/mod.ts";
 ```
 
 ## Usage
@@ -66,6 +66,7 @@ import { VanRouter } from "https://deno.land/x/van_router/mod.ts";
 ```jsx
 import React from "react";
 import ReactDOM from "react-dom";
+import { VanRouter } from "van-router";
 
 const render = (elem) => {
   ReactDOM.render(elem, document.getElementById("app"));
