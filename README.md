@@ -6,7 +6,7 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 - `Easy to use`. you can use pure js everywhere or combine with other framework
   like [Alpinejs](https://alpinejs.dev/), [React](https://reactjs.org/) etc.
-- `Small`. this library is small (just 1kb gzipped and 250B transfered).
+- `Small`. this library is small (just 1kb gzipped).
 - `Middleware`. does your application have authentication? you can use
   middleware.
 - `Lazy-Load`. this router support laze-load js/controller.
@@ -17,11 +17,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.4.5"></script>
+<script src="//unpkg.com/van-router@0.4.6"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.4.5/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.4.6/index.esm.js";
   // code here
 </script>
 ```
@@ -35,7 +35,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.4.5/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.4.6/mod.ts";
 ```
 
 ## Usage

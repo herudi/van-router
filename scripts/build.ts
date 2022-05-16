@@ -1,19 +1,13 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.25/mod.js";
 
-const VERSION = "0.4.5";
+const VERSION = "0.4.6";
 
 const dir = Deno.cwd();
 const dir_npm = dir + "/npm";
-try {
-  await Deno.remove(dir_npm, { recursive: true });
-} catch (_e) { /* noop */ }
 
 try {
-  await Deno.mkdir(dir_npm, { recursive: true });
-} catch (_e) { /* noop */ }
-
-try {
-  const myCode = await esbuild.build({
+  // esm
+  await esbuild.build({
     loader: {
       ".ts": "ts",
     },
@@ -23,23 +17,27 @@ try {
     platform: "browser",
     bundle: true,
     entryPoints: ["./index.ts"],
+    outfile: dir_npm + "/index.esm.js",
+  });
+  // browser
+  const myCode = await esbuild.build({
+    logLevel: "silent",
+    format: "iife",
+    platform: "browser",
+    bundle: true,
+    minify: true,
+    entryPoints: [dir_npm + "/index.js"],
+    globalName: "__23van",
     write: false,
   });
-  const shim =
-    `if (typeof window !== "undefined") {window.module = window.module || {};if (typeof window.module.exports !== "object") {window.module.exports = {};}};`;
   const code = myCode.outputFiles[0].text;
-  await Deno.writeTextFile(dir_npm + "/index.esm.js", code);
-  const cjs = code.replace("export {", "module.exports = {");
-  await Deno.writeTextFile(dir_npm + "/index.js", shim + "\n" + cjs);
-  const min_code = await esbuild.transform(cjs, {
-    minify: true,
-  });
-  await Deno.writeTextFile(
-    dir_npm + "/index.min.js",
-    `var VanRouter=(()=>{${
-      min_code.code.replace(shim, "").replace(/VanRouter/g, "my__")
-    }return my__})();`.replace("\n", "").replace("module.exports={my__};", ""),
+  const min_code = await esbuild.transform(
+    code.replace("\n", "") + "window.VanRouter = __23van.VanRouter;",
+    {
+      minify: true,
+    },
   );
+  await Deno.writeTextFile(dir_npm + "/index.min.js", min_code.code);
   await Deno.writeTextFile(
     dir_npm + "/package.json",
     `{
