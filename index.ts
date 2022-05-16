@@ -26,6 +26,12 @@ type TOptions = {
   base?: string;
 };
 
+function concatRegexp(prefix: string, path: RegExp) {
+  if (prefix === "") return path;
+  const regex = new RegExp(prefix);
+  return new RegExp(regex.source + path.source);
+}
+
 const w = typeof window !== "undefined"
   ? window
   : {} as Window & { [k: string]: TRet };
@@ -50,7 +56,12 @@ export class VanRouter<Ctx extends Context = Context> {
     if (this.base === "/") this.base = "";
   }
 
-  add(path: string, ...fns: Array<Handler<Ctx>>) {
+  add(path: string | RegExp, ...fns: Array<Handler<Ctx>>) {
+    if (path instanceof RegExp) {
+      const regex = concatRegexp(this.base, path);
+      this.routes.push({ fns, regex });
+      return this;
+    }
     path = this.base + path;
     const str = path
       .replace(/\/$/, "")
@@ -58,7 +69,7 @@ export class VanRouter<Ctx extends Context = Context> {
       .replace(/(\/?)\*/g, (_, p) => `(${p}.*)?`)
       .replace(/\.(?=[\w(])/, "\\.");
     const regex = new RegExp(`^${str}/*$`);
-    this.routes.push({ path, fns, regex });
+    this.routes.push({ fns, regex });
     return this;
   }
 

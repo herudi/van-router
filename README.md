@@ -1,5 +1,10 @@
 ## Van Router
 
+[![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.4.8-blue.svg)](https://npmjs.org/package/van-router)
+[![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
+[![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
+
 A small (1kb gzipped) router middleware for vanilla-js.
 
 ## Features
@@ -17,11 +22,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.4.7"></script>
+<script src="//unpkg.com/van-router@0.4.8"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.4.7/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.4.8/index.esm.js";
   // code here
 </script>
 ```
@@ -35,7 +40,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.4.7/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.4.8/mod.ts";
 ```
 
 ## Usage
@@ -171,7 +176,7 @@ const router = new VanRouter({ render });
 Base path/url like `<base href="/myapp" />`.
 
 ```js
-const router = new VanRouter({ base: "/myfolder" });
+const router = new VanRouter({ base: "/myapp" });
 ```
 
 ## Context (ctx)
