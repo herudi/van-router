@@ -1,6 +1,6 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.25/mod.js";
 
-const VERSION = "0.4.8";
+const VERSION = "0.5.0";
 
 const dir = Deno.cwd();
 const dir_npm = dir + "/npm";
@@ -24,15 +24,21 @@ try {
     logLevel: "silent",
     format: "iife",
     platform: "browser",
-    bundle: true,
     minify: true,
     entryPoints: [dir_npm + "/index.js"],
     globalName: "__23van",
     write: false,
   });
+  const load_index = await Deno.readTextFile(dir_npm + "/index.js");
+  await Deno.writeTextFile(
+    dir_npm + "/index.js",
+    `if (typeof window !== "undefined") window.exports = {};
+    ${load_index}
+  `,
+  );
   const code = myCode.outputFiles[0].text;
   const min_code = await esbuild.transform(
-    code.replace("\n", "") + "window.VanRouter = __23van.VanRouter;",
+    code.replace("\n", "") + "var VanRouter = __23van.VanRouter;",
     {
       minify: true,
     },

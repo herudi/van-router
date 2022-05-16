@@ -56,7 +56,9 @@ export class VanRouter<Ctx extends Context = Context> {
     if (this.base === "/") this.base = "";
   }
 
-  add(path: string | RegExp, ...fns: Array<Handler<Ctx>>) {
+  add(path: string | RegExp, ...fns: Array<Handler<Ctx>>): this;
+  add(path: string | RegExp) {
+    const fns = [].slice.call(arguments, 1);
     if (path instanceof RegExp) {
       const regex = concatRegexp(this.base, path);
       this.routes.push({ fns, regex });
@@ -91,8 +93,9 @@ export class VanRouter<Ctx extends Context = Context> {
     return { fns, params };
   }
 
-  use(...fns: Array<Handler<Ctx>>) {
-    this.wares = this.wares.concat(fns as TRet);
+  use(...fns: Array<Handler<Ctx>>): this;
+  use() {
+    this.wares = this.wares.concat([].slice.call(arguments));
     return this;
   }
 
