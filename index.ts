@@ -2,14 +2,14 @@ type TRet = any;
 type TObject = Record<string, TRet>;
 export type NextFunction = (err?: Error) => TRet;
 export interface Context {
-  render: (elem: TRet) => TRet;
   params: TObject;
   lazy(file: string, name?: string): void;
   html: TRet;
-  unmount(fn: () => void): this;
+  unmount(fn: () => void): void;
+  mount(fn: () => void): void;
   go(url: string, type?: string): void;
   url: string;
-  path: string;
+  pathname: string;
   [k: string]: TRet;
 }
 
@@ -90,44 +90,65 @@ export class VanRouter<Ctx extends Context = Context> {
       this.unmount();
       this.unmount = void 0;
     }
-    let { pathname: path, search, hash: h } = w.location, i = 0;
+    let { pathname, search, hash: h } = w.location, i = 0, mount: TRet;
     if (h) {
-      if (path[path.length - 1] === "/") path = path.slice(0, -1);
-      path = (path === "/" ? "/" : path + "/") + h.substring(2);
+      if (pathname[pathname.length - 1] === "/") {
+        pathname = pathname.slice(0, -1);
+      }
+      pathname = (pathname === "/" ? "/" : pathname + "/") + h.substring(2);
       this.current = h + search;
-    } else this.current = path + search;
-    let { fns, params } = this.match(path);
+    } else this.current = pathname + search;
+    let { fns, params } = this.match(pathname);
     const ctx = {} as Ctx;
     ctx.url = this.current;
-    ctx.path = path;
+    ctx.pathname = pathname;
     ctx.params = params;
-    ctx.go = (url, type) => this.goPath(url, type);
+    ctx.go = this.goPath;
     ctx.unmount = (fn) => {
       this.unmount = fn;
-      return ctx;
     };
-    const _render = (elem: TRet) => {
-      this.render(elem);
-      this.listenLink();
+    ctx.mount = (fn) => {
+      mount = fn;
     };
     ctx.html = this.html;
+    const render = (elem: TRet) => {
+      this.render(elem);
+      this.listenLink();
+      if (mount) mount();
+    };
     const next: NextFunction = (err) => {
-      const ret = err ? this._onError(err, ctx) : fns[i++](ctx, next);
+      let ret: TRet;
+      try {
+        ret = err ? this._onError(err, ctx) : fns[i++](ctx, next);
+      } catch (e) {
+        next(e);
+      }
       if (ret !== void 0) {
-        return _render(ret);
+        render(ret);
       }
     };
     ctx.lazy = (file, _name) => {
       file = this.cFile(file);
       const name = _name ||
         file.substring(file.lastIndexOf("/") + 1).replace(".js", "");
-      if (this.controller[file]) return w[name](ctx, next);
+      if (this.controller[file]) {
+        const ret = w[name](ctx, next);
+        if (ret !== void 0) {
+          render(ret);
+        }
+        return;
+      }
       this.controller[file] = true;
       const script = w.document.createElement("script");
       script.src = file + this.vNow;
       script.type = "text/javascript";
       w.document.head.appendChild(script);
-      script.onload = () => w[name](ctx, next);
+      script.onload = () => {
+        const ret = w[name](ctx, next);
+        if (ret !== void 0) {
+          render(ret);
+        }
+      };
     };
     if (!fns) fns = [() => ""];
     fns = this.wares.concat(fns);
