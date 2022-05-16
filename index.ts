@@ -1,3 +1,4 @@
+// deno-lint-ignore no-explicit-any
 type TRet = any;
 type TObject = Record<string, TRet>;
 export type NextFunction = (err?: Error) => TRet;
@@ -27,12 +28,12 @@ type TOptions = {
 
 const w = typeof window !== "undefined"
   ? window
-  : {} as Window & { [k: string]: any };
+  : {} as Window & { [k: string]: TRet };
 
 export class VanRouter<Ctx extends Context = Context> {
   routes: TObject[] = [];
   private render: (elem: TRet) => TRet;
-  private base: string = "";
+  private base = "";
   private wares: Handler[] = [];
   private current!: string;
   private unmount!: (() => void) | undefined;
@@ -62,16 +63,15 @@ export class VanRouter<Ctx extends Context = Context> {
   }
 
   match(path: string) {
-    let fns: any,
+    let fns: TRet,
       params = {},
       j = 0,
-      el: TObject,
-      arr = this.routes,
-      len = arr.length;
+      el: TObject;
+    const arr = this.routes, len = arr.length;
     while (j < len) {
       el = arr[j];
       if (el.regex.test(path)) {
-        if (el.isParam) params = el.regex.exec(path).groups || {};
+        params = el.regex.exec(path).groups || {};
         fns = el.fns;
         break;
       }
@@ -156,9 +156,8 @@ export class VanRouter<Ctx extends Context = Context> {
   }
 
   listenLink() {
-    let links = w.document.querySelectorAll("[u-link]"),
-      i = 0,
-      len = links.length;
+    const links = w.document.querySelectorAll("[u-link]"), len = links.length;
+    let i = 0;
     while (i < len) {
       const link: TRet = links[i];
       link.handle = (e: Event) => {

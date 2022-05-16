@@ -1,12 +1,12 @@
 {
   "lint": {
     "files": {
-      "exclude": ["npm/"]
+      "exclude": ["npm/", "dev/"]
     }
   },
   "fmt": {
     "files": {
-      "exclude": ["npm/"]
+      "exclude": ["npm/", "dev/"]
     }
   },
   "tasks": {

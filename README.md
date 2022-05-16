@@ -17,11 +17,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.4.6"></script>
+<script src="//unpkg.com/van-router@0.4.7"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.4.6/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.4.7/index.esm.js";
   // code here
 </script>
 ```
@@ -35,7 +35,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.4.6/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.4.7/mod.ts";
 ```
 
 ## Usage
