@@ -31,6 +31,8 @@ A small (1kb gzipped) router middleware for vanilla-js.
 </script>
 ```
 
+> cause transpile to ES3, old browser is supported.
+
 ### Nodejs
 
 ```bash
