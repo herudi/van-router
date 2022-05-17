@@ -310,8 +310,6 @@ go to state/path.
 
 ```js
 router.add("/", (ctx) => {
-  ctx.go("#/home");
-  // or without hash
   ctx.go("/home");
 });
 ```
