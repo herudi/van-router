@@ -6,8 +6,8 @@ export interface Context {
   params: TObject;
   lazy(file: string, name?: string): void;
   html: TRet;
-  cleanup(fn: () => void): void;
-  useVanilla(fn: () => void): void;
+  cleanup(fn: () => void): TRet;
+  useVanilla(fn: () => TRet): TRet;
   go(url: string, type?: string): void;
   url: string;
   pathname: string;
@@ -41,10 +41,11 @@ export class VanRouter<Ctx extends Context = Context> {
   routes: TObject[] = [];
   private render: (elem: TRet) => TRet;
   private base = "";
-  private hash = true;
+  private hash = false;
   private wares: Handler[] = [];
   private current!: string;
   private unmount!: (() => void) | undefined;
+  private cleanup!: (() => void) | undefined;
   private vNow = "?v=" + Date.now();
   private cFile = (file: string) =>
     file.indexOf("?") !== -1 ? file.split("?")[0] : file;
@@ -59,9 +60,10 @@ export class VanRouter<Ctx extends Context = Context> {
     if (opts.hash !== void 0) this.hash = opts.hash;
   }
 
-  add(path: string | RegExp, ...fns: Array<Handler<Ctx>>): this;
-  add(path: string | RegExp) {
+  add(path: string | RegExp | undefined, ...fns: Array<Handler<Ctx>>): this;
+  add(path: string | RegExp | undefined) {
     const fns = [].slice.call(arguments, 1);
+    if (path === void 0) path = this.base + w.location.pathname;
     if (path instanceof RegExp) {
       const regex = concatRegexp(this.base, path);
       this.routes.push({ fns, regex });
@@ -107,6 +109,10 @@ export class VanRouter<Ctx extends Context = Context> {
       this.unmount();
       this.unmount = void 0;
     }
+    if (this.cleanup !== void 0) {
+      this.cleanup();
+      this.cleanup = void 0;
+    }
     let { pathname, search, hash: h } = w.location, i = 0, mount: TRet;
     if (h) {
       if (pathname[pathname.length - 1] === "/") {
@@ -145,7 +151,12 @@ export class VanRouter<Ctx extends Context = Context> {
     const render = (elem: TRet) => {
       this.render(elem);
       this.listenLink();
-      if (mount) mount();
+      if (mount) {
+        const cleanup = mount();
+        if (cleanup) {
+          this.cleanup = cleanup;
+        }
+      }
     };
     const next: NextFunction = (err) => {
       let ret: TRet;

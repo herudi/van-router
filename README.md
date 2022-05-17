@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.1-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.2-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 
@@ -22,11 +22,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.1"></script>
+<script src="//unpkg.com/van-router@0.5.2"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.1/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.2/index.esm.js";
   // code here
 </script>
 ```
@@ -40,7 +40,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.1/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.2/mod.ts";
 ```
 
 ## Usage
@@ -51,15 +51,17 @@ import { VanRouter } from "https://deno.land/x/van_router@0.5.1/mod.ts";
 ...
 <body>
   <nav>
-    <a href="#/home" van-link>Home</a>
-    <a href="#/about" van-link>About</a>
+    <a href="/home" van-link>Home</a>
+    <a href="/about" van-link>About</a>
   </nav>
   <div id="app"></div>
   <script>
-    const render = (elem) => {
-      document.getElementById("app").innerHTML = elem;
-    }
-    const router = new VanRouter({ render });
+    // initial router.
+    const router = new VanRouter({ 
+      render: (elem) => {
+        document.getElementById("app").innerHTML = elem;
+      }
+    });
 
     router.add("/", () => {
       return `<h1>Hello Home</h1>`;
@@ -84,19 +86,23 @@ router.add("/", ({ html }) => {
 });
 ```
 
-### Without hash
+### With hash
 
 ```js
 ...
 // html
 <nav>
-  <a href="/home" van-link>Home</a>
-  <a href="/about" van-link>About</a>
+  <a href="#/home" van-link>Home</a>
+  <a href="#/about" van-link>About</a>
 </nav>
 ...
 
-// js (hash set to false)
-const router = new VanRouter({ render, hash: false });
+// js
+const router = new VanRouter({ 
+  // set hash to true
+  hash: true,
+  render: (elem) => {...}
+});
 ...
 ```
 
@@ -132,16 +138,28 @@ router.add("/", bar_midd, ({ foo, bar }) => {
 
 ```js
 ...
-router.add("/", ({ useVanilla }) => {
+// example simple counter app
+router.add("/", ({ useVanilla, html }) => {
 
   useVanilla(() => {
-    const btn = document.getElementById("btn");
-    btn.onclick = () => {
-      alert("Hello from button");
-    };
+    const $ = (v) => document.querySelector(v);
+
+    const onCounter = (numb) => {
+      $("#counter").innerText = parseInt($("#counter").innerText) + numb;
+    }
+
+    $("#btn-plus").onclick = () => onCounter(1);
+    $("#btn-min").onclick = () => onCounter(-1);
+
+    // cleanup here if needed.
+    // return () => {...}
   });
 
-  return `<button id="btn">Click Me</button>`;
+  return html`
+    <button id="btn-plus">+</button>
+    <button id="btn-min">-</button>
+    <label id="counter">0</label>
+  `;
 });
 ...
 ```
@@ -187,6 +205,9 @@ router.add("/user/*", (ctx) => {...});
 
 // with regex
 router.add(/.*noop$/, (ctx) => {...});
+
+// without path.
+router.add(void 0, (ctx) => {...});
 ```
 
 ## Config
@@ -223,7 +244,7 @@ Base path/url like `<base href="/myapp" />`. default to undefined.
 
 ### Config.hash
 
-optional hash true/false. default to true.
+optional hash true/false. default to false.
 
 ## Context (ctx)
 
@@ -252,33 +273,36 @@ router.add("/user/:userId", (ctx) => {
 ```js
 router.add("/", ({ useVanilla }) => {
   useVanilla(() => {
-    const btn = document.getElementById("btn");
-    btn.onclick = () => {
+    window.myClick = () => {
       alert("Hello from button");
+    };
+
+    // cleanup if needed.
+    return () => {
+      delete window.myClick;
     };
   });
 
-  return `<button id="btn">Click Me</button>`;
+  return `<button onclick="myClick()">Click Me</button>`;
 });
 ```
 
 ### Context.cleanup
 
-use cleanup for clear listener or global variable.
+cleanup for clear listener or global variable.
 
 ```js
-router.add("/", ({ useVanilla, cleanup }) => {
-  useVanilla(() => {
-    window.myClick = () => {
-      alert("hello from global window");
-    };
-  });
+router.add("/", ({ cleanup }) => {
+
+  const myFunc = () => {...}
+
+  document.addEventListener("click", myFunc);
 
   cleanup(() => {
-    delete window.myClick;
+    document.removeEventListener("click", myFunc);
   });
 
-  return `<button onclick="myClick()">Click Me</button>`;
+  return `<button id="btn">Click Me</button>`;
 });
 ```
 
