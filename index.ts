@@ -6,8 +6,8 @@ export interface Context {
   params: TObject;
   lazy(file: string, name?: string): void;
   html: TRet;
-  unmount(fn: () => void): void;
-  mount(fn: () => void): void;
+  cleanup(fn: () => void): void;
+  useVanilla(fn: () => void): void;
   go(url: string, type?: string): void;
   url: string;
   pathname: string;
@@ -24,6 +24,7 @@ export type Handler<
 type TOptions = {
   render: (elem: TRet) => TRet;
   base?: string;
+  hash?: boolean;
 };
 
 function concatRegexp(prefix: string, path: RegExp) {
@@ -40,6 +41,7 @@ export class VanRouter<Ctx extends Context = Context> {
   routes: TObject[] = [];
   private render: (elem: TRet) => TRet;
   private base = "";
+  private hash = true;
   private wares: Handler[] = [];
   private current!: string;
   private unmount!: (() => void) | undefined;
@@ -54,6 +56,7 @@ export class VanRouter<Ctx extends Context = Context> {
     this.render = opts.render;
     if (opts.base !== void 0) this.base = opts.base;
     if (this.base === "/") this.base = "";
+    if (opts.hash !== void 0) this.hash = opts.hash;
   }
 
   add(path: string | RegExp, ...fns: Array<Handler<Ctx>>): this;
@@ -112,16 +115,30 @@ export class VanRouter<Ctx extends Context = Context> {
       pathname = (pathname === "/" ? "/" : pathname + "/") + h.substring(2);
       this.current = h + search;
     } else this.current = pathname + search;
+    if (this.current !== "/") {
+      if (this.hash && this.current[0] !== "#") {
+        console.error(
+          "use hash (#) in href. (requires config hash)",
+        );
+        return;
+      }
+      if (!this.hash && this.current[0] === "#") {
+        console.error(
+          "don't use hash (#) in href. (requires config hash)",
+        );
+        return;
+      }
+    }
     let { fns, params } = this.match(pathname);
     const ctx = {} as Ctx;
     ctx.url = this.current;
     ctx.pathname = pathname;
     ctx.params = params;
     ctx.go = this.goPath;
-    ctx.unmount = (fn) => {
+    ctx.cleanup = (fn) => {
       this.unmount = fn;
     };
-    ctx.mount = (fn) => {
+    ctx.useVanilla = (fn) => {
       mount = fn;
     };
     ctx.html = this.html;
@@ -170,7 +187,7 @@ export class VanRouter<Ctx extends Context = Context> {
   }
 
   listenLink() {
-    const links = w.document.querySelectorAll("[u-link]"), len = links.length;
+    const links = w.document.querySelectorAll("[van-link]"), len = links.length;
     let i = 0;
     while (i < len) {
       const link: TRet = links[i];
@@ -178,7 +195,7 @@ export class VanRouter<Ctx extends Context = Context> {
         e.preventDefault();
         e.stopPropagation();
         const loc: string = link.getAttribute("href") ||
-          link.getAttribute("u-link");
+          link.getAttribute("van-link");
         if (this.current !== loc) {
           w.history.pushState({}, "", loc);
           w.__uHandler();
@@ -213,7 +230,7 @@ export class VanRouter<Ctx extends Context = Context> {
   }
 
   goPath(path: string, type = "pushState") {
-    (w as TRet).history[type]({}, "", path);
+    (w as TRet).history[type]({}, "", (this.hash ? "#" : "") + path);
     w.__uHandler();
   }
 }

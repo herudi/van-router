@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.0-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.1-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 
@@ -22,11 +22,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.0"></script>
+<script src="//unpkg.com/van-router@0.5.1"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.0/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.1/index.esm.js";
   // code here
 </script>
 ```
@@ -40,7 +40,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.0/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.1/mod.ts";
 ```
 
 ## Usage
@@ -51,8 +51,8 @@ import { VanRouter } from "https://deno.land/x/van_router@0.5.0/mod.ts";
 ...
 <body>
   <nav>
-    <a href="#/home" u-link>Home</a>
-    <a href="#/about" u-link>About</a>
+    <a href="#/home" van-link>Home</a>
+    <a href="#/about" van-link>About</a>
   </nav>
   <div id="app"></div>
   <script>
@@ -84,6 +84,22 @@ router.add("/", ({ html }) => {
 });
 ```
 
+### Without hash
+
+```js
+...
+// html
+<nav>
+  <a href="/home" van-link>Home</a>
+  <a href="/about" van-link>About</a>
+</nav>
+...
+
+// js (hash set to false)
+const router = new VanRouter({ render, hash: false });
+...
+```
+
 ### Middleware
 
 ```js
@@ -112,13 +128,13 @@ router.add("/", bar_midd, ({ foo, bar }) => {
 
 ### Interaction
 
-use mount for javascript to document interaction or DOM manipulation.
+`useVanilla` for javascript to document interaction or DOM manipulation.
 
 ```js
 ...
-router.add("/", ({ mount }) => {
+router.add("/", ({ useVanilla }) => {
 
-  mount(() => {
+  useVanilla(() => {
     const btn = document.getElementById("btn");
     btn.onclick = () => {
       alert("Hello from button");
@@ -150,11 +166,41 @@ function home() {
 }
 ```
 
+### Route Paths
+
+```js
+// simple path
+router.add("/", (ctx) => {...});
+
+// with parameter
+router.add("/user/:id/:name", (ctx) => {...});
+
+// with optional parameter
+router.add("/user/:id/:name?", (ctx) => {...});
+
+// with ext
+router.add("/image/:filename.(jpg|png)", (ctx) => {...});
+
+// wildcard
+router.add("*", (ctx) => {...});
+router.add("/user/*", (ctx) => {...});
+
+// with regex
+router.add(/.*noop$/, (ctx) => {...});
+```
+
 ## Config
 
 Config for VanRouter
 
 ```js
+// types
+type Config = {
+  render: (elem: any) => void;
+  base?: string;
+  hash?: boolean;
+}
+
 const router = new VanRouter(config);
 ```
 
@@ -173,11 +219,11 @@ const router = new VanRouter({ render });
 
 ### Config.base
 
-Base path/url like `<base href="/myapp" />`.
+Base path/url like `<base href="/myapp" />`. default to undefined.
 
-```js
-const router = new VanRouter({ base: "/myapp" });
-```
+### Config.hash
+
+optional hash true/false. default to true.
 
 ## Context (ctx)
 
@@ -199,13 +245,13 @@ router.add("/user/:userId", (ctx) => {
 });
 ```
 
-### Context.mount
+### Context.useVanilla
 
-use mount for javascript to document interaction or DOM manipulation.
+`useVanilla` for javascript to document interaction or DOM manipulation.
 
 ```js
-router.add("/", ({ mount }) => {
-  mount(() => {
+router.add("/", ({ useVanilla }) => {
+  useVanilla(() => {
     const btn = document.getElementById("btn");
     btn.onclick = () => {
       alert("Hello from button");
@@ -216,19 +262,19 @@ router.add("/", ({ mount }) => {
 });
 ```
 
-### Context.unmount
+### Context.cleanup
 
-use unmount for cleanup listener or global variable.
+use cleanup for clear listener or global variable.
 
 ```js
-router.add("/", ({ mount, unmount }) => {
-  mount(() => {
+router.add("/", ({ useVanilla, cleanup }) => {
+  useVanilla(() => {
     window.myClick = () => {
       alert("hello from global window");
     };
   });
 
-  unmount(() => {
+  cleanup(() => {
     delete window.myClick;
   });
 
