@@ -105,13 +105,15 @@ export class VanRouter<Ctx extends Context = Context> {
   }
 
   handle() {
-    if (this.unmount !== void 0) {
-      this.unmount();
-      this.unmount = void 0;
+    // deno-lint-ignore no-this-alias
+    const s = this;
+    if (s.unmount !== void 0) {
+      s.unmount();
+      s.unmount = void 0;
     }
-    if (this.cleanup !== void 0) {
-      this.cleanup();
-      this.cleanup = void 0;
+    if (s.cleanup !== void 0) {
+      s.cleanup();
+      s.cleanup = void 0;
     }
     let { pathname, search, hash: h } = w.location, i = 0, mount: TRet;
     if (h) {
@@ -119,49 +121,51 @@ export class VanRouter<Ctx extends Context = Context> {
         pathname = pathname.slice(0, -1);
       }
       pathname = (pathname === "/" ? "/" : pathname + "/") + h.substring(2);
-      this.current = h + search;
-    } else this.current = pathname + search;
-    if (this.current !== "/") {
-      if (this.hash && this.current[0] !== "#") {
+      s.current = h + search;
+    } else s.current = pathname + search;
+    if (s.current !== "/") {
+      if (s.hash && s.current[0] !== "#") {
         console.error(
           "use hash (#) in href. (requires config hash)",
         );
         return;
       }
-      if (!this.hash && this.current[0] === "#") {
+      if (!s.hash && s.current[0] === "#") {
         console.error(
           "don't use hash (#) in href. (requires config hash)",
         );
         return;
       }
     }
-    let { fns, params } = this.match(pathname);
+    let { fns, params } = s.match(pathname);
     const ctx = {} as Ctx;
-    ctx.url = this.current;
+    ctx.url = s.current;
     ctx.pathname = pathname;
     ctx.params = params;
-    ctx.go = this.goPath;
+    ctx.go = (url, type) => {
+      s.goPath(url, type);
+    };
     ctx.cleanup = (fn) => {
-      this.unmount = fn;
+      s.unmount = fn;
     };
     ctx.useVanilla = (fn) => {
       mount = fn;
     };
-    ctx.html = this.html;
+    ctx.html = s.html;
     const render = (elem: TRet) => {
-      this.render(elem);
-      this.listenLink();
+      s.render(elem);
+      s.listenLink();
       if (mount) {
         const cleanup = mount();
         if (cleanup) {
-          this.cleanup = cleanup;
+          s.cleanup = cleanup;
         }
       }
     };
     const next: NextFunction = (err) => {
       let ret: TRet;
       try {
-        ret = err ? this._onError(err, ctx) : fns[i++](ctx, next);
+        ret = err ? s._onError(err, ctx) : fns[i++](ctx, next);
       } catch (e) {
         next(e);
       }
@@ -170,19 +174,19 @@ export class VanRouter<Ctx extends Context = Context> {
       }
     };
     ctx.lazy = (file, _name) => {
-      file = this.cFile(file);
+      file = s.cFile(file);
       const name = _name ||
         file.substring(file.lastIndexOf("/") + 1).replace(".js", "");
-      if (this.controller[file]) {
+      if (s.controller[file]) {
         const ret = w[name](ctx, next);
         if (ret !== void 0) {
           render(ret);
         }
         return;
       }
-      this.controller[file] = true;
+      s.controller[file] = true;
       const script = w.document.createElement("script");
-      script.src = file + this.vNow;
+      script.src = file + s.vNow;
       script.type = "text/javascript";
       w.document.head.appendChild(script);
       script.onload = () => {
@@ -193,7 +197,7 @@ export class VanRouter<Ctx extends Context = Context> {
       };
     };
     if (!fns) fns = [() => ""];
-    fns = this.wares.concat(fns);
+    fns = s.wares.concat(fns);
     next();
   }
 
