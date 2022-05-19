@@ -4,6 +4,7 @@
 [![npm version](https://img.shields.io/badge/npm-0.5.4-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
+[![minzip](https://img.shields.io/bundlephobia/minzip/van-router?style=plastic)](https://github.com/herudi/van-router)
 
 A small (1kb gzipped) router middleware for vanilla-js.
 
