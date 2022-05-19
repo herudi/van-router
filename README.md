@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.3-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.4-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 
@@ -22,11 +22,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.3"></script>
+<script src="//unpkg.com/van-router@0.5.4"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.3/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.4/index.esm.js";
   // code here
 </script>
 ```
@@ -42,7 +42,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.3/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.4/mod.ts";
 ```
 
 ## Usage
@@ -136,14 +136,16 @@ router.add("/", bar_midd, ({ foo, bar }) => {
 
 ### Interaction
 
-`useVanilla` for javascript to document interaction or DOM manipulation.
+Interaction with native vanilla or other framework using `useAfter`.
+
+why `useAfter` ? because execute code after rendering element/view.
 
 ```js
 ...
 // example simple counter app
-router.add("/", ({ useVanilla, html }) => {
+router.add("/", ({ useAfter, html }) => {
 
-  useVanilla(() => {
+  useAfter(() => {
     const $ = (v) => document.querySelector(v);
 
     const onCounter = (numb) => {
@@ -268,43 +270,37 @@ router.add("/user/:userId", (ctx) => {
 });
 ```
 
-### Context.useVanilla
+### Context.useAfter
 
-`useVanilla` for javascript to document interaction or DOM manipulation.
+Interaction with native vanilla or other framework using `useAfter`.
+
+why `useAfter` ? because execute code after rendering element/view.
 
 ```js
-router.add("/", ({ useVanilla }) => {
-  useVanilla(() => {
-    window.myClick = () => {
-      alert("Hello from button");
-    };
+...
+useAfter(() => {
+  // code here
+  return () => {
+    // cleanup here
+  }
+})
+...
+```
 
-    // cleanup if needed.
+Example `useAfter`
+
+```js
+router.add("/", ({ useAfter }) => {
+  useAfter(() => {
+    window.myClick = () => {
+      alert("Hello World");
+    };
     return () => {
       delete window.myClick;
     };
   });
 
   return `<button onclick="myClick()">Click Me</button>`;
-});
-```
-
-### Context.cleanup
-
-cleanup for clear listener or global variable.
-
-```js
-router.add("/", ({ cleanup }) => {
-
-  const myFunc = () => {...}
-
-  document.addEventListener("click", myFunc);
-
-  cleanup(() => {
-    document.removeEventListener("click", myFunc);
-  });
-
-  return `<button id="btn">Click Me</button>`;
 });
 ```
 

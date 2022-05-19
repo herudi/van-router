@@ -6,5 +6,5 @@ const router = new VanRouter({
 });
 
 router.add("/", ({ lazy }) => lazy("/page/home.js"));
-router.add("/about", ({ lazy }) => lazy("/page/about.js"));
+router.add("/todo", ({ lazy }) => lazy("/page/todo.js"));
 router.resolve();

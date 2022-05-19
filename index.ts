@@ -6,8 +6,7 @@ export interface Context {
   params: TObject;
   lazy(file: string, name?: string): void;
   html: TRet;
-  cleanup(fn: () => void): TRet;
-  useVanilla(fn: () => TRet): TRet;
+  useAfter(fn: () => TRet): TRet;
   go(url: string, type?: string): void;
   url: string;
   pathname: string;
@@ -44,8 +43,7 @@ export class VanRouter<Ctx extends Context = Context> {
   private hash = false;
   private wares: Handler[] = [];
   private current!: string;
-  private unmount!: (() => void) | undefined;
-  private cleanup!: (() => void) | undefined;
+  private cleanup!: (() => TRet) | undefined;
   private vNow = "?v=" + Date.now();
   private cFile = (file: string) =>
     file.indexOf("?") !== -1 ? file.split("?")[0] : file;
@@ -107,10 +105,6 @@ export class VanRouter<Ctx extends Context = Context> {
   handle() {
     // deno-lint-ignore no-this-alias
     const s = this;
-    if (s.unmount !== void 0) {
-      s.unmount();
-      s.unmount = void 0;
-    }
     if (s.cleanup !== void 0) {
       s.cleanup();
       s.cleanup = void 0;
@@ -145,10 +139,7 @@ export class VanRouter<Ctx extends Context = Context> {
     ctx.go = (url, type) => {
       s.goPath(url, type);
     };
-    ctx.cleanup = (fn) => {
-      s.unmount = fn;
-    };
-    ctx.useVanilla = (fn) => {
+    ctx.useAfter = (fn) => {
       mount = fn;
     };
     ctx.html = s.html;
@@ -157,7 +148,7 @@ export class VanRouter<Ctx extends Context = Context> {
       s.listenLink();
       if (mount) {
         const cleanup = mount();
-        if (cleanup) {
+        if (typeof cleanup === "function") {
           s.cleanup = cleanup;
         }
       }
