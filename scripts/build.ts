@@ -1,6 +1,6 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.25/mod.js";
 
-const VERSION = "0.5.4";
+const VERSION = "0.5.5";
 
 const dir = Deno.cwd();
 const dir_npm = dir + "/npm";

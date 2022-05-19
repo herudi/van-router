@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.4-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.5-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -16,6 +16,7 @@ A small (1kb gzipped) router middleware for vanilla-js.
 - `Middleware`. does your application have authentication? you can use
   middleware.
 - `Lazy-Load`. this router support laze-load js/controller.
+- `SPA / SSR`. support SPA / SSR.
 
 ## Installation
 
@@ -23,11 +24,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.4"></script>
+<script src="//unpkg.com/van-router@0.5.5"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.4/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.5/index.esm.js";
   // code here
 </script>
 ```
@@ -43,7 +44,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.4/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.5/mod.ts";
 ```
 
 ## Usage
@@ -132,40 +133,6 @@ router.add("/", bar_midd, ({ foo, bar }) => {
   // => foobar
 });
 
-...
-```
-
-### Interaction
-
-Interaction with native vanilla or other framework using `useAfter`.
-
-why `useAfter` ? because execute code after rendering element/view.
-
-```js
-...
-// example simple counter app
-router.add("/", ({ useAfter, html }) => {
-
-  useAfter(() => {
-    const $ = (v) => document.querySelector(v);
-
-    const onCounter = (numb) => {
-      $("#counter").innerText = parseInt($("#counter").innerText) + numb;
-    }
-
-    $("#btn-plus").onclick = () => onCounter(1);
-    $("#btn-min").onclick = () => onCounter(-1);
-
-    // cleanup here if needed.
-    // return () => {...}
-  });
-
-  return html`
-    <button id="btn-plus">+</button>
-    <button id="btn-min">-</button>
-    <label id="counter">0</label>
-  `;
-});
 ...
 ```
 
@@ -273,7 +240,7 @@ router.add("/user/:userId", (ctx) => {
 
 ### Context.useAfter
 
-Interaction with native vanilla or other framework using `useAfter`.
+Turn on client-side effect with `useAfter`.
 
 why `useAfter` ? because execute code after rendering element/view.
 
@@ -332,9 +299,7 @@ function home() {
 go to state/path.
 
 ```js
-router.add("/", (ctx) => {
-  ctx.go("/home");
-});
+ctx.go(pathString);
 ```
 
 ### Context.html
@@ -352,6 +317,11 @@ router.add("/", ({ html }) => {
 
 - Context.pathname
 - Context.url
+- Context.isServer
+- Context.request (SSR only)
+- Context.location (SSR only)
+- Context.response (SSR only)
+- Context.render (SSR only)
 
 ## Handle error & not found
 

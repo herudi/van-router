@@ -1,0 +1,18 @@
+<html>
+
+<head>
+</head>
+
+<body>
+  <nav>
+    <a href="/" van-link>Home</a>
+    <a href="/todo" van-link>Todo</a>
+  </nav>
+  <div id="app">{{PAGE}}</div>
+  <script type="module">
+    import router from "./assets/router.js";
+    router.resolve();
+  </script>
+</body>
+
+</html>

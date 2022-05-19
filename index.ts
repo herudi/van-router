@@ -1,6 +1,9 @@
 // deno-lint-ignore no-explicit-any
 type TRet = any;
 type TObject = Record<string, TRet>;
+type RequestLike = Record<string, TRet>;
+type ResponseLike = Record<string, TRet>;
+type LocationLike = Record<string, TRet>;
 export type NextFunction = (err?: Error) => TRet;
 export interface Context {
   params: TObject;
@@ -10,8 +13,19 @@ export interface Context {
   go(url: string, type?: string): void;
   url: string;
   pathname: string;
+  isServer: boolean;
+  request: RequestLike;
+  response: ResponseLike;
+  location: LocationLike;
   [k: string]: TRet;
 }
+
+type ResolveContext = {
+  request: RequestLike;
+  response?: ResponseLike;
+  location: LocationLike;
+  render: (elem: TRet) => TRet;
+};
 
 export type Handler<
   Ctx extends Context = Context,
@@ -21,7 +35,7 @@ export type Handler<
 ) => TRet;
 
 type TOptions = {
-  render: (elem: TRet) => TRet;
+  render?: (elem: TRet) => TRet;
   base?: string;
   hash?: boolean;
 };
@@ -32,13 +46,15 @@ function concatRegexp(prefix: string, path: RegExp) {
   return new RegExp(regex.source + path.source);
 }
 
-const w = typeof window !== "undefined"
-  ? window
-  : {} as Window & { [k: string]: TRet };
+// deno-lint-ignore ban-ts-comment
+// @ts-ignore
+const is_client = typeof window !== "undefined" && window.document !== void 0;
+
+const w = is_client ? window : {} as Window & { [k: string]: TRet };
 
 export class VanRouter<Ctx extends Context = Context> {
   routes: TObject[] = [];
-  private render: (elem: TRet) => TRet;
+  private render: (elem: TRet) => TRet = () => {};
   private base = "";
   private hash = false;
   private wares: Handler[] = [];
@@ -51,17 +67,17 @@ export class VanRouter<Ctx extends Context = Context> {
   private _onError = (_err: Error, _ctx: Ctx) => {
     return "";
   };
-  constructor(opts: TOptions) {
-    this.render = opts.render;
+  constructor(opts: TOptions = {}) {
+    if (opts.render !== void 0) this.render = opts.render;
     if (opts.base !== void 0) this.base = opts.base;
     if (this.base === "/") this.base = "";
     if (opts.hash !== void 0) this.hash = opts.hash;
   }
 
-  add(path: string | RegExp | undefined, ...fns: Array<Handler<Ctx>>): this;
-  add(path: string | RegExp | undefined) {
+  add(path: string | RegExp | Handler<Ctx>, ...fns: Array<Handler<Ctx>>): this;
+  add(path: string | RegExp | Handler<Ctx>) {
     const fns = [].slice.call(arguments, 1);
-    if (path === void 0) path = this.base + w.location.pathname;
+    if (typeof path === "function") fns.unshift(path as never);
     if (path instanceof RegExp) {
       const regex = concatRegexp(this.base, path);
       this.routes.push({ fns, regex });
@@ -102,14 +118,17 @@ export class VanRouter<Ctx extends Context = Context> {
     return this;
   }
 
-  handle() {
+  handle(ctx = {} as Ctx) {
     // deno-lint-ignore no-this-alias
     const s = this;
     if (s.cleanup !== void 0) {
       s.cleanup();
       s.cleanup = void 0;
     }
-    let { pathname, search, hash: h } = w.location, i = 0, mount: TRet;
+    const isServer = ctx.request !== void 0;
+    let { pathname, search, hash: h } = isServer ? ctx.location : w.location,
+      i = 0,
+      mount: TRet;
     if (h) {
       if (pathname[pathname.length - 1] === "/") {
         pathname = pathname.slice(0, -1);
@@ -132,7 +151,6 @@ export class VanRouter<Ctx extends Context = Context> {
       }
     }
     let { fns, params } = s.match(pathname);
-    const ctx = {} as Ctx;
     ctx.url = s.current;
     ctx.pathname = pathname;
     ctx.params = params;
@@ -142,16 +160,18 @@ export class VanRouter<Ctx extends Context = Context> {
     ctx.useAfter = (fn) => {
       mount = fn;
     };
+    ctx.isServer = isServer;
     ctx.html = s.html;
     const render = (elem: TRet) => {
-      s.render(elem);
-      s.listenLink();
-      if (mount) {
+      const ret = isServer ? ctx.render(elem) : s.render(elem);
+      const ret2 = s.listenLink();
+      if (mount && !ret2) {
         const cleanup = mount();
         if (typeof cleanup === "function") {
           s.cleanup = cleanup;
         }
       }
+      return ret;
     };
     const next: NextFunction = (err) => {
       let ret: TRet;
@@ -161,7 +181,7 @@ export class VanRouter<Ctx extends Context = Context> {
         next(e);
       }
       if (ret !== void 0) {
-        render(ret);
+        return render(ret);
       }
     };
     ctx.lazy = (file, _name) => {
@@ -189,10 +209,38 @@ export class VanRouter<Ctx extends Context = Context> {
     };
     if (!fns) fns = [() => ""];
     fns = s.wares.concat(fns);
-    next();
+    return next();
   }
 
-  listenLink() {
+  resolve(ctx?: ResolveContext) {
+    if (!w.__uHandler) w.__uHandler = (r: TRet) => this.handle(r);
+    const ret = w.__uHandler(ctx);
+    const ret2 = this.listenLink();
+    if (!ret2) {
+      w.addEventListener("popstate", () => {
+        if (this.current !== w.location.hash) w.__uHandler();
+      });
+    }
+    return ret;
+  }
+
+  html(ret: TRet) {
+    const subs = [].slice.call(arguments, 1);
+    return ret.reduce(function (a: string, b: string, c: number) {
+      let val = subs[c - 1] as TRet;
+      if (val === null || val === undefined) val = "";
+      return a + String(val) + b;
+    });
+  }
+
+  onError(fn: (err: Error, ctx: Ctx) => TRet) {
+    this._onError = fn;
+    return this;
+  }
+
+  private listenLink() {
+    // true for not client
+    if (!is_client) return true;
     const links = w.document.querySelectorAll("[van-link]"), len = links.length;
     let i = 0;
     while (i < len) {
@@ -212,30 +260,7 @@ export class VanRouter<Ctx extends Context = Context> {
     }
   }
 
-  resolve() {
-    if (!w.__uHandler) w.__uHandler = () => this.handle();
-    w.__uHandler();
-    this.listenLink();
-    w.addEventListener("popstate", () => {
-      if (this.current !== w.location.hash) w.__uHandler();
-    });
-  }
-
-  html(ret: TRet) {
-    const subs = [].slice.call(arguments, 1);
-    return ret.reduce(function (a: string, b: string, c: number) {
-      let val = subs[c - 1] as TRet;
-      if (val === null || val === undefined) val = "";
-      return a + String(val) + b;
-    });
-  }
-
-  onError(fn: (err: Error, ctx: Ctx) => TRet) {
-    this._onError = fn;
-    return this;
-  }
-
-  goPath(path: string, type = "pushState") {
+  private goPath(path: string, type = "pushState") {
     (w as TRet).history[type]({}, "", (this.hash ? "#" : "") + path);
     w.__uHandler();
   }
