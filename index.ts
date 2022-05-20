@@ -7,6 +7,7 @@ type LocationLike = Record<string, TRet>;
 export type NextFunction = (err?: Error) => TRet;
 export interface Context {
   params: TObject;
+  isHydrate: boolean;
   lazy(file: string, name?: string): void;
   html: TRet;
   useAfter(fn: () => TRet): TRet;
@@ -57,6 +58,7 @@ export class VanRouter<Ctx extends Context = Context> {
   private render: (elem: TRet) => TRet = () => {};
   private base = "";
   private hash = false;
+  private isHydrate = true;
   private wares: Handler[] = [];
   private current!: string;
   private cleanup!: (() => TRet) | undefined;
@@ -64,9 +66,7 @@ export class VanRouter<Ctx extends Context = Context> {
   private cFile = (file: string) =>
     file.indexOf("?") !== -1 ? file.split("?")[0] : file;
   private controller: TObject = {};
-  private _onError = (_err: Error, _ctx: Ctx) => {
-    return "";
-  };
+  private _onError = (_err: Error, _ctx: Ctx) => "Error: " + _err.message;
   constructor(opts: TOptions = {}) {
     if (opts.render !== void 0) this.render = opts.render;
     if (opts.base !== void 0) this.base = opts.base;
@@ -74,10 +74,9 @@ export class VanRouter<Ctx extends Context = Context> {
     if (opts.hash !== void 0) this.hash = opts.hash;
   }
 
-  add(path: string | RegExp | Handler<Ctx>, ...fns: Array<Handler<Ctx>>): this;
-  add(path: string | RegExp | Handler<Ctx>) {
+  add(path: string | RegExp, ...fns: Array<Handler<Ctx>>): this;
+  add(path: string | RegExp) {
     const fns = [].slice.call(arguments, 1);
-    if (typeof path === "function") fns.unshift(path as never);
     if (path instanceof RegExp) {
       const regex = concatRegexp(this.base, path);
       this.routes.push({ fns, regex });
@@ -152,6 +151,7 @@ export class VanRouter<Ctx extends Context = Context> {
     }
     let { fns, params } = s.match(pathname);
     ctx.url = s.current;
+    ctx.isHydrate = s.isHydrate || isServer;
     ctx.pathname = pathname;
     ctx.params = params;
     ctx.go = (url, type) => {
@@ -180,7 +180,12 @@ export class VanRouter<Ctx extends Context = Context> {
       } catch (e) {
         next(e);
       }
-      if (ret !== void 0) {
+      if (ret) {
+        if (typeof ret.then === "function") {
+          return ret.then((r: TRet) => {
+            if (r) return render(r);
+          }).catch(next);
+        }
         return render(ret);
       }
     };
@@ -190,9 +195,7 @@ export class VanRouter<Ctx extends Context = Context> {
         file.substring(file.lastIndexOf("/") + 1).replace(".js", "");
       if (s.controller[file]) {
         const ret = w[name](ctx, next);
-        if (ret !== void 0) {
-          render(ret);
-        }
+        if (ret) render(ret);
         return;
       }
       s.controller[file] = true;
@@ -202,13 +205,12 @@ export class VanRouter<Ctx extends Context = Context> {
       w.document.head.appendChild(script);
       script.onload = () => {
         const ret = w[name](ctx, next);
-        if (ret !== void 0) {
-          render(ret);
-        }
+        if (ret) render(ret);
       };
     };
     if (!fns) fns = [() => ""];
     fns = s.wares.concat(fns);
+    s.isHydrate = false;
     return next();
   }
 

@@ -1,7 +1,7 @@
 {
   "lint": {
     "files": {
-      "exclude": ["npm/", "dev/", "/examples", "dev.ts"]
+      "exclude": ["npm/", "dev/", "examples/", "dev.ts"]
     }
   },
   "fmt": {

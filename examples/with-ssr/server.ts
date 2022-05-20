@@ -1,20 +1,26 @@
 import router from "./public/router.js";
-import staticFiles from "https://deno.land/x/static_files@1.1.6/mod.ts";
-import { NHttp } from "https://deno.land/x/nhttp@1.1.11/mod.ts";
+import { serveFile } from "https://deno.land/std@0.140.0/http/file_server.ts";
+import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
+const index = await Deno.readTextFile("./public/template.html");
 
-new NHttp()
-  .use("/assets", staticFiles("public"))
-  .get("*", async ({ request, response }) => {
-    const index = await Deno.readTextFile("./public/index.html");
-    return router.resolve({
-      request: request,
-      location: new URL(request.url),
-      render: (elem: string) => {
-        response.type("text/html");
-        return index.replace("{{PAGE}}", elem);
-      },
-    });
-  })
-  .listen(port);
+await serve(async (request: Request) => {
+  try {
+    const path = new URL(request.url).pathname;
+    return await serveFile(request, "./public/" + path);
+  } catch (_e) { /* noop */ }
+  const res = router.resolve({
+    request: request,
+    location: new URL(request.url),
+    render: (elem: string) => {
+      const html = index.replace("{{PAGE}}", elem);
+      return new Response(html, {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      });
+    },
+  });
+  return res;
+}, { port });

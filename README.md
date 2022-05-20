@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.5-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.6-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -24,11 +24,11 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.5"></script>
+<script src="//unpkg.com/van-router@0.5.6"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.5/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.6/index.esm.js";
   // code here
 </script>
 ```
@@ -44,7 +44,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.5/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.6/mod.ts";
 ```
 
 ## Usage
@@ -177,9 +177,6 @@ router.add("/user/*", (ctx) => {...});
 
 // with regex
 router.add(/.*noop$/, (ctx) => {...});
-
-// without path.
-router.add(void 0, (ctx) => {...});
 ```
 
 ## Config
@@ -318,9 +315,10 @@ router.add("/", ({ html }) => {
 - Context.pathname
 - Context.url
 - Context.isServer
+- Context.isHydrate
 - Context.request (SSR only)
 - Context.location (SSR only)
-- Context.response (SSR only)
+- Context.response (SSR only optional)
 - Context.render (SSR only)
 
 ## Handle error & not found
