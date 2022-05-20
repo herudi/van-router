@@ -13,37 +13,37 @@ Deno.test("router verb test", async (t) => {
   van.add("*", () => "all");
 
   await t.step("/user", () => {
-    const m = van.match("/app/user");
+    const m = van.match("/app/user", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, {});
   });
   await t.step("/user/:id", () => {
-    const m = van.match("/app/user/123");
+    const m = van.match("/app/user/123", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, { id: "123" });
   });
   await t.step("/people/:name/:address?", () => {
-    const m = van.match("/app/people/john");
+    const m = van.match("/app/people/john", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, { name: "john", address: undefined });
   });
   await t.step("/people/:name/:address? 2", () => {
-    const m = van.match("/app/people/john/majalengka");
+    const m = van.match("/app/people/john/majalengka", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, { name: "john", address: "majalengka" });
   });
   await t.step("/image/:filename.(png|jpg)", () => {
-    const m = van.match("/app/image/myfile.jpg");
+    const m = van.match("/app/image/myfile.jpg", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, { filename: "myfile" });
   });
   await t.step("regex /football", () => {
-    const m = van.match("/app/football");
+    const m = van.match("/app/football", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, {});
   });
   await t.step("exact /all/all", () => {
-    const m = van.match("/app/all/all");
+    const m = van.match("/app/all/all", "GET");
     assertEquals(m.fns.length, 1);
     assertEquals(m.params, {});
   });
