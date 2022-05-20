@@ -1,6 +1,16 @@
-export default function todo({ html, useAfter }) {
-  // default todos
-  const todos = ["Banana", "Apple"];
+export default async function todo({ html, useAfter, useSSR }) {
+  const data = await useSSR({
+    head: html`<title>Hello Todo</title>`,
+    data: async () => {
+      const res = await fetch(
+        "https://jsonplaceholder.typicode.com/todos?_limit=10",
+      );
+      const todos = (await res.json()).map((o) => o.title);
+      return { todos };
+    },
+  });
+
+  const todos = data.todos || [];
 
   useAfter(() => {
     const $ = (v) => document.querySelector(v);

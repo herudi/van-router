@@ -1,22 +1,21 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.6-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.7-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
 
-A small (1kb gzipped) router middleware for vanilla-js.
+A small router middleware for vanilla-js.
 
 ## Features
 
 - `Easy to use`. you can use pure js everywhere or combine with other framework
   like [Alpinejs](https://alpinejs.dev/), [React](https://reactjs.org/) etc.
-- `Small`. this library is small (just 1kb gzipped).
 - `Middleware`. does your application have authentication? you can use
   middleware.
 - `Lazy-Load`. this router support laze-load js/controller.
-- `SPA / SSR`. support SPA / SSR.
+- `SSR`. support SSR / Deno / Nodejs.
 
 ## Installation
 
@@ -24,16 +23,16 @@ A small (1kb gzipped) router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.6"></script>
+<script src="//unpkg.com/van-router@0.5.7"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.6/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.7/index.esm.js";
   // code here
 </script>
 ```
 
-> cause transpile to ES3, old browser is supported.
+> This library transpile to ES3.
 
 ### Nodejs
 
@@ -44,7 +43,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.6/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.7/mod.ts";
 ```
 
 ## Usage
@@ -75,7 +74,9 @@ import { VanRouter } from "https://deno.land/x/van_router@0.5.6/mod.ts";
       return `<h1>Hello About</h1>`;
     });
 
-    router.resolve();
+    addEventListener("load", () => {
+      router.resolve();
+    });
   </script>
 </body>
 ...
@@ -117,11 +118,11 @@ const router = new VanRouter({
 
 const foo_midd = (ctx, next) => {
   ctx.foo = "foo";
-  next();
+  return next();
 }
 const bar_midd = (ctx, next) => {
   ctx.bar = "bar";
-  next();
+  return next();
 }
 
 // global middleware
@@ -158,6 +159,16 @@ function home() {
 
 ### Route Paths
 
+Route
+
+```js
+router.add("/", (ctx) => {...});
+// or
+router.route("GET", "/", (ctx) => {...});
+```
+
+Example
+
 ```js
 // simple path
 router.add("/", (ctx) => {...});
@@ -186,7 +197,7 @@ Config for VanRouter
 ```js
 // types
 type Config = {
-  render: (elem: any) => void;
+  render?: (elem: any) => void;
   base?: string;
   hash?: boolean;
 }
@@ -310,6 +321,20 @@ router.add("/", ({ html }) => {
 });
 ```
 
+### Context.useSSR
+
+For server-side-rendering.
+
+```js
+...
+useSSR({
+  data?: () => TObject;
+  head?: string;
+  key_data?: string /* default __VAN_DATA__ */;
+})
+...
+```
+
 ### Other context
 
 - Context.pathname
@@ -317,9 +342,7 @@ router.add("/", ({ html }) => {
 - Context.isServer
 - Context.isHydrate
 - Context.request (SSR only)
-- Context.location (SSR only)
-- Context.response (SSR only optional)
-- Context.render (SSR only)
+- Context.response (SSR only)
 
 ## Handle error & not found
 
@@ -371,6 +394,86 @@ router.add("/about", () => {
 });
 
 router.resolve();
+```
+
+## With Nodejs (Server-Rendered)
+
+```js
+const { VanRouter } = require("van-router");
+const http = require("http");
+
+const port = 8080;
+
+const router = new VanRouter();
+
+router.add("/", ({ html, useSSR }) => {
+  useSSR({
+    head: html`<title>Hello from node</title>`,
+  });
+  return html`<h1>Hello From Node</h1>`;
+});
+
+http.createServer(async (request, response) => {
+  const van = router.resolve({ request, response });
+  const elem = await van.out();
+  const head = van.head;
+  if (typeof elem === "string") {
+    response.setHeader("Content-Type", "text/html");
+    response.end(`
+      <html>
+        <head>
+          <link rel="icon" href="data:,">
+          ${head}
+        </head>
+        <body>
+          ${elem}
+        </body>
+      </html>
+    `);
+  }
+}).listen(port);
+```
+
+## With Deno (Server-Rendered)
+
+```ts
+import { VanRouter } from "https://deno.land/x/van_router@0.5.7/mod.ts";
+import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
+
+const port = 8080;
+
+const router = new VanRouter();
+
+router.add("/", ({ html, useSSR }) => {
+  useSSR({
+    head: html`<title>Hello from deno</title>`,
+  });
+  return html`<h1>Hello From Deno</h1>`;
+});
+
+await serve(async (request: Request) => {
+  const van = router.resolve({ request });
+  const elem = await van.out();
+  const head = van.head;
+  if (!elem) return new Response("NOOP 404");
+  if (elem instanceof Response) return elem;
+  return new Response(
+    `
+    <html>
+      <head>
+        <link rel="icon" href="data:,">
+        ${head}
+      </head>
+      <body>
+        ${elem}
+      </body>
+    </html>
+  `,
+    {
+      headers: { "Content-Type": "text/html" },
+    },
+  );
+}, { port });
 ```
 
 > It's Fun Project :).

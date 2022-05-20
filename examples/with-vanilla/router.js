@@ -7,4 +7,7 @@ const router = new VanRouter({
 
 router.add("/", ({ lazy }) => lazy("/page/home.js"));
 router.add("/todo", ({ lazy }) => lazy("/page/todo.js"));
-router.resolve();
+
+addEventListener("load", () => {
+  router.resolve();
+});
