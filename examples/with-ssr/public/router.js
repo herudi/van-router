@@ -1,4 +1,4 @@
-import { VanRouter } from "https://unpkg.com/van-router@0.5.7/index.esm.js";
+import { VanRouter } from "https://unpkg.com/van-router@0.5.8/index.esm.js";
 import home from "./page/home.js";
 import todo from "./page/todo.js";
 

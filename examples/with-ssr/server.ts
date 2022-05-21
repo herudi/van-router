@@ -12,10 +12,10 @@ await serve(async (request: Request) => {
   } catch (_e) { /* noop */ }
 
   // response
-  const res = router.resolve({ request });
-  const page = await res.out();
-  const data = await res.data();
-  const head = res.head;
+  const van = router.resolve({ request });
+  const page = await van.out();
+  const data = await van.data();
+  const head = van.head();
   if (page instanceof Response) return page;
   return new Response(
     `<html>

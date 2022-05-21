@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.7-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.5.8-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -23,11 +23,11 @@ A small router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.7"></script>
+<script src="//unpkg.com/van-router@0.5.8"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.7/index.esm.js";
+  import { VanRouter } from "https://unpkg.com/van-router@0.5.8/index.esm.js";
   // code here
 </script>
 ```
@@ -43,7 +43,7 @@ npm i van-router
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.7/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.8/mod.ts";
 ```
 
 ## Usage
@@ -164,7 +164,7 @@ Route
 ```js
 router.add("/", (ctx) => {...});
 // or
-router.route("GET", "/", (ctx) => {...});
+router.on("GET", "/", (ctx) => {...});
 ```
 
 Example
@@ -234,14 +234,56 @@ Is an utility based on object.
 router.add("/", (context) => {...})
 ```
 
-### Context.params
+### Context.route
+
+```ts
+type CtxRoute = {
+  url: string;
+  pathname: string;
+  params: Record<string, any>;
+  go(url: string, type?: string): void;
+};
+```
+
+### Context.route.params
 
 Object query parameter from path.
 
 ```js
-router.add("/user/:userId", (ctx) => {
-  console.log(ctx.params);
+router.add("/user/:userId", ({ route }) => {
+  console.log(route.params);
   // => { userId: "123" }
+  return ``;
+});
+```
+
+### Context.route.pathname
+
+```js
+router.add("/user", ({ route }) => {
+  console.log(route.pathname);
+  // url => /user?name=john
+  // pathname => /user
+  return ``;
+});
+```
+
+### Context.route.url
+
+```js
+router.add("/user", ({ route }) => {
+  console.log(route.url);
+  return ``;
+});
+```
+
+### Context.route.go
+
+Go to pathname (client only).
+
+```js
+router.add("/user", ({ route }) => {
+  route.go("/home");
   return ``;
 });
 ```
@@ -302,14 +344,6 @@ function home() {
 }
 ```
 
-### Context.go
-
-go to state/path.
-
-```js
-ctx.go(pathString);
-```
-
 ### Context.html
 
 for vscode literal html syntax highlight
@@ -321,24 +355,52 @@ router.add("/", ({ html }) => {
 });
 ```
 
-### Context.useSSR
+### Context.useData
 
-For server-side-rendering.
+support client-side and server-side.
 
 ```js
-...
-useSSR({
-  data?: () => TObject;
-  head?: string;
-  key_data?: string /* default __VAN_DATA__ */;
-})
-...
+router.add("/", ({ html, useData }) => {
+  const data = useData(() => {
+    return { name: "john" };
+  });
+  return html`<h1>${data.name}</h1>`;
+});
+```
+
+### Context.setHead
+
+set head support client-side and server-side.
+
+```js
+router.add("/", ({ html, setHead }) => {
+  setHead(html`<title>Name John</title>`);
+
+  return html`<h1>Name John</h1>`;
+});
+```
+
+### Context.getHandler
+
+Call handler in handler. (server-side only).
+`getHandler(url: string, method?: string) => Promise<any>`.
+
+> note : requires return object directly on handler.
+
+```ts
+router.add("/api/user/:name", ({ html, route }) => {
+  return { name: route.params.name };
+});
+
+router.add("/", ({ html, getHandler }) => {
+  const data = await getHandler("/api/user/john");
+  return html`<h1>${data.name}</h1>`;
+  // => <h1>john</h1>
+});
 ```
 
 ### Other context
 
-- Context.pathname
-- Context.url
 - Context.isServer
 - Context.isHydrate
 - Context.request (SSR only)
@@ -406,17 +468,15 @@ const port = 8080;
 
 const router = new VanRouter();
 
-router.add("/", ({ html, useSSR }) => {
-  useSSR({
-    head: html`<title>Hello from node</title>`,
-  });
+router.add("/", ({ html, setHead }) => {
+  setHead(html`<title>Hello from node</title>`);
   return html`<h1>Hello From Node</h1>`;
 });
 
 http.createServer(async (request, response) => {
   const van = router.resolve({ request, response });
   const elem = await van.out();
-  const head = van.head;
+  const head = van.head();
   if (typeof elem === "string") {
     response.setHeader("Content-Type", "text/html");
     response.end(`
@@ -437,25 +497,22 @@ http.createServer(async (request, response) => {
 ## With Deno (Server-Rendered)
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.7/mod.ts";
+import { VanRouter } from "https://deno.land/x/van_router@0.5.8/mod.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
 
 const router = new VanRouter();
 
-router.add("/", ({ html, useSSR }) => {
-  useSSR({
-    head: html`<title>Hello from deno</title>`,
-  });
+router.add("/", ({ html, setHead }) => {
+  setHead(html`<title>Hello from deno</title>`);
   return html`<h1>Hello From Deno</h1>`;
 });
 
 await serve(async (request: Request) => {
   const van = router.resolve({ request });
   const elem = await van.out();
-  const head = van.head;
-  if (!elem) return new Response("NOOP 404");
+  const head = van.head();
   if (elem instanceof Response) return elem;
   return new Response(
     `

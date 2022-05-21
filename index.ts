@@ -5,22 +5,22 @@ type RequestLike = Record<string, TRet>;
 type ResponseLike = Record<string, TRet>;
 export type NextFunction = (err?: Error) => TRet;
 export interface Context {
-  params: TObject;
-  isHydrate: boolean;
   lazy(file: string, name?: string): void;
   html: TRet;
   useAfter(fn: () => TRet): TRet;
-  go(url: string, type?: string): void;
-  useSSR(obj: {
-    key_data?: string;
-    data?: () => TObject;
-    head?: string;
-  }): TRet;
-  url: string;
-  pathname: string;
+  useData(fn: () => TRet): TRet;
+  setHead(str: string): TRet;
+  route: {
+    url: string;
+    pathname: string;
+    params: TObject;
+    go(url: string, type?: string): void;
+  };
+  isHydrate: boolean;
   isServer: boolean;
   request: RequestLike;
   response: ResponseLike;
+  getHandler(url: string, method?: string): Promise<TRet>;
   [k: string]: TRet;
 }
 
@@ -71,14 +71,16 @@ export const IS_CLIENT = typeof window !== "undefined" &&
 
 const w = IS_CLIENT ? window : {} as Window & { [k: string]: TRet };
 const _ren: TRet = (r: TRet) => r;
+const err_hash = "use hash (#) in href. (requires config hash)";
 
 export class VanRouter<Ctx extends Context = Context> {
   _route: TObject = {};
   private _ctx: TRet;
   private _head = "";
-  private _init: TRet = () => ({});
+  private _data: TRet = () => ({});
   private render = _ren;
   private base = "";
+  private origin = "";
   private hash = false;
   private isHydrate = false;
   private wares: Handler[] = [];
@@ -95,15 +97,15 @@ export class VanRouter<Ctx extends Context = Context> {
     if (opts.base !== void 0) this.base = opts.base;
     if (this.base === "/") this.base = "";
     if (opts.hash !== void 0) this.hash = opts.hash;
-    this.add = this.route.bind(this, "GET");
+    this.add = this.on.bind(this, "GET");
   }
 
-  route(
+  on(
     method: string,
     path: string | RegExp,
     ...fns: Array<Handler<Ctx>>
   ): this;
-  route(method: string, path: string | RegExp) {
+  on(method: string, path: string | RegExp) {
     const fns = [].slice.call(arguments, 2);
     this._route[method] = this._route[method] || [];
     if (path instanceof RegExp) {
@@ -122,7 +124,7 @@ export class VanRouter<Ctx extends Context = Context> {
     return this;
   }
 
-  match(path: string, method: string) {
+  match(path: string, method = "GET") {
     let fns: TRet,
       params = {},
       j = 0,
@@ -159,66 +161,75 @@ export class VanRouter<Ctx extends Context = Context> {
     const isServer = ctx.request !== void 0;
     let loc;
     if (isServer) {
-      const url = ctx.request.url;
+      const url = ctx.__url || ctx.request.url;
       loc = new URL((url[0] === "/" ? "http://a.b" : "") + url);
+      s.origin = loc.origin;
     }
-    let { pathname, search, hash: h } = loc || w.location,
+    let { pathname: pn, search, hash: h } = loc || w.location,
       i = 0,
       mount: TRet;
     if (h) {
-      if (pathname[pathname.length - 1] === "/") {
-        pathname = pathname.slice(0, -1);
+      if (pn[pn.length - 1] === "/") {
+        pn = pn.slice(0, -1);
       }
-      pathname = (pathname === "/" ? "/" : pathname + "/") + h.substring(2);
+      pn = (pn === "/" ? "/" : pn + "/") + h.substring(2);
       s.current = h + search;
-    } else s.current = pathname + search;
+    } else s.current = pn + search;
     if (s.current !== "/") {
       if (s.hash && s.current[0] !== "#") {
-        console.error(
-          "use hash (#) in href. (requires config hash)",
-        );
+        console.error(err_hash);
         return;
       }
       if (!s.hash && s.current[0] === "#") {
-        console.error(
-          "don't use hash (#) in href. (requires config hash)",
-        );
+        console.error("don't " + err_hash);
         return;
       }
     }
-    const method = (ctx.request || {}).method || "GET";
-    let { fns, params } = s.match(pathname, method);
-    ctx.url = s.current;
-    ctx.isHydrate = s.isHydrate || isServer;
-    ctx.pathname = pathname;
-    ctx.params = params;
-    ctx.go = (url, type) => {
+    const method = ctx.__method || (ctx.request || {}).method || "GET";
+    let { fns, params } = s.match(pn, method);
+    ctx.route = {
+      url: s.current,
+      pathname: pn,
+      params,
+    } as TRet;
+    ctx.route.go = (url, type) => {
+      if (isServer) return;
       s.goPath(url, type);
     };
+    ctx.isHydrate = s.isHydrate || isServer;
     ctx.useAfter = (fn) => {
       mount = fn;
     };
-    ctx.useSSR = (obj = {}) => {
-      if (obj.head) {
-        if (!isServer && ctx.isHydrate) {
-          w.document.head.innerHTML += obj.head;
+    ctx.getHandler = (str, method) => {
+      if (!isServer) return;
+      s._ctx.__url = str[0] === "/" ? s.origin + str : str;
+      s._ctx.__method = method;
+      return s.handle(s._ctx);
+    };
+    ctx.setHead = (str) => {
+      if (!isServer && ctx.isHydrate) {
+        if (s._head) {
+          w.document.head.innerHTML = w.document.head.innerHTML.replace(
+            s._head,
+            "",
+          );
         }
-        s._head = obj.head;
+        w.document.head.innerHTML += str;
       }
-      if (obj.data) {
-        if (isServer) {
-          return s._init = obj.data();
-        } else {
-          const nm = obj.key_data || "__VAN_DATA__";
-          const data = w[nm];
-          if (data) {
-            delete w[nm];
-            return data;
-          }
-          return obj.data();
+      s._head = str;
+    };
+    ctx.useData = (fn) => {
+      if (isServer) {
+        return s._data = fn();
+      } else {
+        const nm = "__VAN_DATA__";
+        const data = w[nm];
+        if (data) {
+          delete w[nm];
+          return data;
         }
+        return fn();
       }
-      return {};
     };
     ctx.isServer = isServer;
     ctx.html = s.html;
@@ -226,8 +237,8 @@ export class VanRouter<Ctx extends Context = Context> {
       const ret = isServer
         ? (ctx.render ? ctx.render(elem) : _ren(elem))
         : s.render(elem);
-      const ret2 = s.listenLink();
-      if (mount && !ret2) {
+      s.listenLink();
+      if (mount && !isServer) {
         const cleanup = mount();
         if (typeof cleanup === "function") {
           s.cleanup = cleanup;
@@ -251,10 +262,9 @@ export class VanRouter<Ctx extends Context = Context> {
         return render(ret);
       }
     };
-    ctx.lazy = (file, _name) => {
+    ctx.lazy = (file) => {
       file = s.cFile(file);
-      const name = _name ||
-        file.substring(file.lastIndexOf("/") + 1).replace(".js", "");
+      const name = file.substring(file.lastIndexOf("/") + 1).replace(".js", "");
       if (s.controller[file]) {
         const ret = w[name](ctx, next);
         if (ret) render(ret);
@@ -270,15 +280,11 @@ export class VanRouter<Ctx extends Context = Context> {
         if (ret) render(ret);
       };
     };
-    if (!fns) fns = [() => ""];
-    fns = s.wares.concat(fns);
-    s.isHydrate = true;
-    if (!isServer && s._head) {
-      w.document.head.innerHTML = w.document.head.innerHTML.replace(
-        s._head,
-        "",
-      );
+    if (!fns) fns = [() => "404 not found"];
+    if (!ctx.__url) {
+      fns = s.wares.concat(fns);
     }
+    s.isHydrate = true;
     return next();
   }
 
@@ -292,7 +298,11 @@ export class VanRouter<Ctx extends Context = Context> {
         if (this.current !== w.location.hash) w.__uHandler(ctx);
       });
     }
-    return { out: () => out, head: this._head, data: () => this._init };
+    return {
+      out: (): Promise<TRet> => out,
+      head: (): string => this._head,
+      data: (): Promise<TRet> => this._data,
+    };
   }
 
   html(ret: TRet) {
@@ -312,10 +322,7 @@ export class VanRouter<Ctx extends Context = Context> {
   private listenLink() {
     // true for not client
     if (!IS_CLIENT) return true;
-    const links = w.document.querySelectorAll("[van-link]"), len = links.length;
-    let i = 0;
-    while (i < len) {
-      const link: TRet = links[i];
+    w.document.querySelectorAll("[van-link]").forEach((link: TObject) => {
       link.handle = (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
@@ -327,8 +334,7 @@ export class VanRouter<Ctx extends Context = Context> {
         }
       };
       link.addEventListener("click", link.handle);
-      i++;
-    }
+    });
   }
 
   private goPath(path: string, type = "pushState") {
