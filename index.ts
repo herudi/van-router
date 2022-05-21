@@ -73,7 +73,7 @@ const w = IS_CLIENT ? window : {} as Window & { [k: string]: TRet };
 const _ren: TRet = (r: TRet) => r;
 const err_hash = "use hash (#) in href. (requires config hash)";
 
-export class VanRouter<Ctx extends Context = Context> {
+class Router<Ctx extends Context = Context> {
   _route: TObject = {};
   private _ctx: TRet;
   private _head = "";
@@ -237,7 +237,7 @@ export class VanRouter<Ctx extends Context = Context> {
       const ret = isServer
         ? (ctx.render ? ctx.render(elem) : _ren(elem))
         : s.render(elem);
-      s.listenLink();
+      s.listenLink(isServer);
       if (mount && !isServer) {
         const cleanup = mount();
         if (typeof cleanup === "function") {
@@ -288,12 +288,13 @@ export class VanRouter<Ctx extends Context = Context> {
     return next();
   }
 
-  resolve(ctx?: ResolveContext) {
+  resolve(ctx: ResolveContext = {}) {
     if (!w.__uHandler) w.__uHandler = (r: TRet) => this.handle(r);
+    const isServer = ctx.request !== void 0;
     this._ctx = ctx;
     const out = w.__uHandler(ctx);
-    const ret2 = this.listenLink();
-    if (!ret2) {
+    this.listenLink(isServer);
+    if (!isServer) {
       w.addEventListener("popstate", () => {
         if (this.current !== w.location.hash) w.__uHandler(ctx);
       });
@@ -319,9 +320,8 @@ export class VanRouter<Ctx extends Context = Context> {
     return this;
   }
 
-  private listenLink() {
-    // true for not client
-    if (!IS_CLIENT) return true;
+  private listenLink(isServer: boolean) {
+    if (isServer) return;
     w.document.querySelectorAll("[van-link]").forEach((link: TObject) => {
       link.handle = (e: Event) => {
         e.preventDefault();
@@ -342,3 +342,6 @@ export class VanRouter<Ctx extends Context = Context> {
     w.__uHandler(this._ctx);
   }
 }
+
+export const createRouter = <Ctx extends Context = Context>(opts?: TOptions) =>
+  new Router<Ctx>(opts);

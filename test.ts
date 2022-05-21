@@ -1,10 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.139.0/testing/asserts.ts";
-import { VanRouter } from "./index.ts";
-
-const render = () => {};
+import { createRouter } from "./index.ts";
 
 Deno.test("router verb test", async (t) => {
-  const van = new VanRouter({ render, base: "/app" });
+  const van = createRouter({ base: "/app" });
   van.add("/user", () => "user");
   van.add("/user/:id", () => "user_id");
   van.add("/people/:name/:address?", () => "optional");

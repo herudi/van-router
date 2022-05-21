@@ -1,10 +1,10 @@
-// const { VanRouter } = require("van-router");
-const { VanRouter } = require("../../npm/index.js");
+// const { createRouter } = require("van-router");
+const { createRouter } = require("../../npm/index.js");
 const http = require("http");
 
 const port = 8080;
 
-const router = new VanRouter();
+const router = createRouter();
 
 router.add("/", ({ html, setHead }) => {
   setHead(html`<title>Hello from node</title>`);

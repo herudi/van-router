@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.5.8-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.6.0-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -23,11 +23,11 @@ A small router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.5.8"></script>
+<script src="//unpkg.com/van-router@0.6.0"></script>
 
 <!-- es module -->
 <script type="module">
-  import { VanRouter } from "https://unpkg.com/van-router@0.5.8/index.esm.js";
+  import { createRouter } from "https://unpkg.com/van-router@0.6.0/index.esm.js";
   // code here
 </script>
 ```
@@ -40,15 +40,19 @@ A small router middleware for vanilla-js.
 npm i van-router
 ```
 
+```js
+const { createRouter } = require("van-router");
+```
+
 ### Deno
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.8/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.0/mod.ts";
 ```
 
 ## Usage
 
-### Example
+### Example in the browser
 
 ```html
 ...
@@ -59,8 +63,10 @@ import { VanRouter } from "https://deno.land/x/van_router@0.5.8/mod.ts";
   </nav>
   <div id="app"></div>
   <script>
-    // initial router.
-    const router = new VanRouter({ 
+
+    const { createRouter } = Van;
+
+    const router = createRouter({ 
       render: (elem) => {
         document.getElementById("app").innerHTML = elem;
       }
@@ -103,7 +109,7 @@ router.add("/", ({ html }) => {
 ...
 
 // js
-const router = new VanRouter({ 
+const router = createRouter({ 
   // set hash to true
   hash: true,
   render: (elem) => {...}
@@ -202,7 +208,7 @@ type Config = {
   hash?: boolean;
 }
 
-const router = new VanRouter(config);
+const router = createRouter(config);
 ```
 
 ### Config.render
@@ -215,7 +221,7 @@ const render = (elem) => {
   // or with React
   // ReactDOM.render(elem, document.getElementById("app"));
 };
-const router = new VanRouter({ render });
+const router = createRouter({ render });
 ```
 
 ### Config.base
@@ -435,7 +441,7 @@ router.onError((err, ctx) => {
 ```jsx
 import React from "react";
 import ReactDOM from "react-dom";
-import { VanRouter } from "van-router";
+import { createRouter } from "van-router";
 
 // example components
 import Home from "./components/home";
@@ -445,7 +451,7 @@ const render = (component) => {
   ReactDOM.render(component, document.getElementById("app"));
 };
 
-const router = new VanRouter({ render });
+const router = createRouter({ render });
 
 router.add("/", () => {
   return <Home />;
@@ -461,12 +467,12 @@ router.resolve();
 ## With Nodejs (Server-Rendered)
 
 ```js
-const { VanRouter } = require("van-router");
+const { createRouter } = require("van-router");
 const http = require("http");
 
 const port = 8080;
 
-const router = new VanRouter();
+const router = createRouter();
 
 router.add("/", ({ html, setHead }) => {
   setHead(html`<title>Hello from node</title>`);
@@ -497,12 +503,12 @@ http.createServer(async (request, response) => {
 ## With Deno (Server-Rendered)
 
 ```ts
-import { VanRouter } from "https://deno.land/x/van_router@0.5.8/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.0/mod.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
 
-const router = new VanRouter();
+const router = createRouter();
 
 router.add("/", ({ html, setHead }) => {
   setHead(html`<title>Hello from deno</title>`);

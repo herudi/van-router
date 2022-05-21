@@ -1,8 +1,8 @@
-import { VanRouter } from "https://unpkg.com/van-router@0.5.8/index.esm.js";
+import { createRouter } from "https://unpkg.com/van-router@0.6.0/index.esm.js";
 import home from "./page/home.js";
 import todo from "./page/todo.js";
 
-const router = new VanRouter({
+const router = createRouter({
   render: (elem) => {
     document.getElementById("app").innerHTML = elem;
   },

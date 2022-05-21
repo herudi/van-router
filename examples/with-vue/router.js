@@ -1,4 +1,4 @@
-const router = new VanRouter({
+const router = createRouter({
   render: (elem) => {
     document.getElementById("app").innerHTML = elem;
   },

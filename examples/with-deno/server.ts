@@ -1,9 +1,9 @@
-import { VanRouter } from "../../index.ts";
+import { createRouter } from "../../index.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
 
-const router = new VanRouter();
+const router = createRouter();
 
 router.add("/", ({ html, setHead }) => {
   setHead(html`<title>Hello from deno</title>`);
