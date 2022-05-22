@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.6.1-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.6.2-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -47,7 +47,7 @@ const { createRouter } = require("van-router");
 ### Deno
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.1/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.2/mod.ts";
 ```
 
 ## Usage
@@ -464,6 +464,22 @@ router.add("/about", () => {
 router.resolve();
 ```
 
+## Server-Rendered
+
+```js
+// resolve in the server.
+const res = router.resolve({ request, response });
+
+// body / elem
+const body = await res.out();
+
+// initial data from useData.
+const data = await res.data();
+
+// head for seo from setHead.
+const head = res.head();
+```
+
 ## With Nodejs (Server-Rendered)
 
 ```js
@@ -480,10 +496,10 @@ router.add("/", ({ html, setHead }) => {
 });
 
 http.createServer(async (request, response) => {
-  const van = router.resolve({ request, response });
-  const elem = await van.out();
-  const head = van.head();
-  if (typeof elem === "string") {
+  const res = router.resolve({ request, response });
+  const body = await res.out();
+  const head = res.head();
+  if (typeof body === "string") {
     response.setHeader("Content-Type", "text/html");
     response.end(`
       <html>
@@ -492,7 +508,7 @@ http.createServer(async (request, response) => {
           ${head}
         </head>
         <body>
-          ${elem}
+          ${body}
         </body>
       </html>
     `);
@@ -503,7 +519,7 @@ http.createServer(async (request, response) => {
 ## With Deno (Server-Rendered)
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.1/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.2/mod.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
@@ -516,10 +532,10 @@ router.add("/", ({ html, setHead }) => {
 });
 
 await serve(async (request: Request) => {
-  const van = router.resolve({ request });
-  const elem = await van.out();
-  const head = van.head();
-  if (elem instanceof Response) return elem;
+  const res = router.resolve({ request });
+  const body = await res.out();
+  const head = res.head();
+  if (body instanceof Response) return body;
   return new Response(
     `
     <html>
@@ -528,7 +544,7 @@ await serve(async (request: Request) => {
         ${head}
       </head>
       <body>
-        ${elem}
+        ${body}
       </body>
     </html>
   `,

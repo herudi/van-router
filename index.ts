@@ -13,6 +13,7 @@ export interface Context {
   route: {
     url: string;
     pathname: string;
+    path: string | RegExp;
     params: TObject;
     go(url: string, type?: string): void;
   };
@@ -47,21 +48,6 @@ type TOptions = {
   base?: string;
   hash?: boolean;
 };
-
-function concatRegexp(prefix: string, path: RegExp) {
-  if (prefix === "") return path;
-  const regex = new RegExp(prefix);
-  return new RegExp(regex.source + path.source);
-}
-
-const decURI = (str: string) => {
-  try {
-    return decodeURI(str);
-  } catch (_e) {
-    return str;
-  }
-};
-
 // deno-lint-ignore ban-ts-comment
 // @ts-ignore
 export const IS_CLIENT = typeof window !== "undefined" &&
@@ -109,8 +95,10 @@ class Router<Ctx extends Context = Context> {
     const fns = [].slice.call(arguments, 2);
     this._route[method] = this._route[method] || [];
     if (path instanceof RegExp) {
-      const regex = concatRegexp(this.base, path);
-      this._route[method].push({ fns, regex });
+      const regex = this.base === ""
+        ? path
+        : new RegExp(new RegExp(this.base).source + path.source);
+      this._route[method].push({ fns, regex, path });
       return this;
     }
     path = this.base + path;
@@ -120,13 +108,14 @@ class Router<Ctx extends Context = Context> {
       .replace(/(\/?)\*/g, (_, p) => `(${p}.*)?`)
       .replace(/\.(?=[\w(])/, "\\.");
     const regex = new RegExp(`^${str}/*$`);
-    this._route[method].push({ fns, regex });
+    this._route[method].push({ fns, regex, path });
     return this;
   }
 
-  match(path: string, method = "GET") {
+  match(url: string, method = "GET") {
     let fns: TRet,
       params = {},
+      path,
       j = 0,
       el: TObject;
     let arr = this._route[method] || [];
@@ -134,15 +123,18 @@ class Router<Ctx extends Context = Context> {
     const len = arr.length;
     while (j < len) {
       el = arr[j];
-      if (el.regex && el.regex.test(path)) {
-        path = decURI(path);
-        params = el.regex.exec(path).groups || {};
+      if (el.regex && el.regex.test(url)) {
+        try {
+          url = decodeURI(url);
+        } catch (_e) { /* noop */ }
+        params = el.regex.exec(url).groups || {};
         fns = el.fns;
+        path = el.path;
         break;
       }
       j++;
     }
-    return { fns, params };
+    return { fns, params, path };
   }
 
   use(...fns: Array<Handler<Ctx>>): this;
@@ -186,11 +178,12 @@ class Router<Ctx extends Context = Context> {
       }
     }
     const method = ctx.__method || (ctx.request || {}).method || "GET";
-    let { fns, params } = s.match(pn, method);
+    let { fns, params, path } = s.match(pn, method);
     ctx.route = {
       url: s.current,
       pathname: pn,
       params,
+      path,
     } as TRet;
     ctx.route.go = (url, type) => {
       if (isServer) return;
@@ -207,7 +200,7 @@ class Router<Ctx extends Context = Context> {
       return s.handle(s._ctx);
     };
     ctx.setHead = (str) => {
-      if (!isServer && ctx.isHydrate) {
+      if (!isServer) {
         if (s._head) {
           w.document.head.innerHTML = w.document.head.innerHTML.replace(
             s._head,
