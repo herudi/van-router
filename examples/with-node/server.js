@@ -1,5 +1,5 @@
 // const { createRouter } = require("van-router");
-const { createRouter } = require("../../npm/index.js");
+const { createRouter } = require("../../npm/index.node.js");
 const http = require("http");
 
 const port = 8080;
