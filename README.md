@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.6.0-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.6.1-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -23,11 +23,11 @@ A small router middleware for vanilla-js.
 
 ```html
 <!-- non module -->
-<script src="//unpkg.com/van-router@0.6.0"></script>
+<script src="//unpkg.com/van-router"></script>
 
 <!-- es module -->
 <script type="module">
-  import { createRouter } from "https://unpkg.com/van-router@0.6.0/index.esm.js";
+  import { createRouter } from "https://esm.sh/van-router";
   // code here
 </script>
 ```
@@ -47,7 +47,7 @@ const { createRouter } = require("van-router");
 ### Deno
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.0/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.1/mod.ts";
 ```
 
 ## Usage
@@ -503,7 +503,7 @@ http.createServer(async (request, response) => {
 ## With Deno (Server-Rendered)
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.0/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.1/mod.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;

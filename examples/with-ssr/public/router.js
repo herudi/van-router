@@ -1,4 +1,4 @@
-import { createRouter } from "https://unpkg.com/van-router@0.6.0/index.esm.js";
+import { createRouter } from "https://esm.sh/van-router";
 import home from "./page/home.js";
 import todo from "./page/todo.js";
 

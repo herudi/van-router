@@ -11,6 +11,6 @@
   },
   "tasks": {
     // build
-    "build": "deno run -A ./scripts/clean_up.ts && tsc -d index.ts --outdir npm && deno run -A ./scripts/build.ts"
+    "build": "deno run -A ./scripts/clean_up.ts && tsc --noImplicitUseStrict -d index.ts --outdir npm && deno run -A ./scripts/build.ts"
   }
 }

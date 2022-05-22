@@ -1,6 +1,6 @@
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.25/mod.js";
 
-const VERSION = "0.6.0";
+const VERSION = "0.6.1";
 
 const dir = Deno.cwd();
 const dir_npm = dir + "/npm";
@@ -20,26 +20,22 @@ try {
     entryPoints: ["./index.ts"],
     outfile: dir_npm + "/index.esm.js",
   });
-  // browser
-  await esbuild.build({
-    logLevel: "silent",
-    format: "iife",
-    platform: "browser",
-    entryPoints: [dir_npm + "/index.js"],
-    outfile: dir_npm + "/index.js",
-    allowOverwrite: true,
-    globalName: "Van",
-  });
+  const index = await Deno.readTextFile(dir_npm + "/index.node.js");
+  const out = `"use strict"; 
+  var Van = (function(){
+  var exports = {};
+  ${index}
+  return exports;
+})();`;
+  await Deno.writeTextFile(dir_npm + "/index.js", out);
   // browser min
   await esbuild.build({
     logLevel: "silent",
-    format: "iife",
-    platform: "browser",
+    platform: "neutral",
     minify: true,
     entryPoints: [dir_npm + "/index.js"],
     outfile: dir_npm + "/index.min.js",
     sourcemap: true,
-    globalName: "Van",
   });
 
   await Deno.writeTextFile(
