@@ -245,6 +245,7 @@ router.add("/", (context) => {...})
 ```ts
 type CtxRoute = {
   url: string;
+  path: string | RegExp;
   pathname: string;
   params: Record<string, any>;
   go(url: string, type?: string): void;
@@ -290,6 +291,16 @@ Go to pathname (client only).
 ```js
 router.add("/user", ({ route }) => {
   route.go("/home");
+  return ``;
+});
+```
+
+### Context.route.path
+
+```js
+router.add("/user/:userId/book/:bookId", ({ route }) => {
+  console.log(route.path);
+  // => /user/:userId/book/:bookId
   return ``;
 });
 ```
