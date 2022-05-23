@@ -200,16 +200,18 @@ class Router<Ctx extends Context = Context> {
       return s.handle(s._ctx);
     };
     ctx.setHead = (str) => {
+      const tag = str.replace(/title>|>|\/>/g, (a) => {
+        return (a == "title>" ? "" : " van-head") + a;
+      });
       if (!isServer) {
-        if (s._head) {
-          w.document.head.innerHTML = w.document.head.innerHTML.replace(
-            s._head,
-            "",
-          );
-        }
-        w.document.head.innerHTML += str;
+        const title = w.document.querySelector("title");
+        if (title) title.remove();
+        const arr = w.document.querySelectorAll("[van-head]");
+        for (let i = 0; i < arr.length; i++) arr[i].remove();
+        const h = w.document.querySelector("head");
+        if (h) h.insertAdjacentHTML("beforeend", tag);
       }
-      s._head = str;
+      s._head = tag;
     };
     ctx.useData = (fn) => {
       if (isServer) {
