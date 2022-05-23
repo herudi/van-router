@@ -204,12 +204,14 @@ class Router<Ctx extends Context = Context> {
         return (a == "title>" ? "" : " van-head") + a;
       });
       if (!isServer) {
-        const title = w.document.querySelector("title");
-        if (title) title.remove();
-        const arr = w.document.querySelectorAll("[van-head]");
-        for (let i = 0; i < arr.length; i++) arr[i].remove();
-        const h = w.document.querySelector("head");
-        if (h) h.insertAdjacentHTML("beforeend", tag);
+        if (str.indexOf("</title>") !== -1) {
+          const title = w.document.querySelector("title");
+          if (title) title.remove();
+        }
+        w.document.querySelectorAll("[van-head]").forEach((el: TRet) =>
+          el.remove()
+        );
+        w.document.head.insertAdjacentHTML("beforeend", tag);
       }
       s._head = tag;
     };

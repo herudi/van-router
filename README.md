@@ -1,7 +1,7 @@
 ## Van Router
 
 [![ci](https://github.com/herudi/van-router/workflows/ci/badge.svg)](https://github.com/herudi/van-router)
-[![npm version](https://img.shields.io/badge/npm-0.6.3-blue.svg)](https://npmjs.org/package/van-router)
+[![npm version](https://img.shields.io/badge/npm-0.6.4-blue.svg)](https://npmjs.org/package/van-router)
 [![License](https://img.shields.io/:license-mit-blue.svg)](http://badges.mit-license.org)
 [![download-url](https://img.shields.io/npm/dm/van-router.svg)](https://npmjs.org/package/van-router)
 [![minzip](https://img.shields.io/bundlephobia/minzip/van-router)](https://github.com/herudi/van-router)
@@ -47,7 +47,7 @@ const { createRouter } = require("van-router");
 ### Deno
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.3/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.4/mod.ts";
 ```
 
 ## Usage
@@ -203,7 +203,7 @@ Config for VanRouter
 ```js
 // types
 type Config = {
-  render?: (elem: any) => void;
+  render?: (elem: any) => any;
   base?: string;
   hash?: boolean;
 }
@@ -530,7 +530,7 @@ http.createServer(async (request, response) => {
 ## With Deno (Server-Rendered)
 
 ```ts
-import { createRouter } from "https://deno.land/x/van_router@0.6.3/mod.ts";
+import { createRouter } from "https://deno.land/x/van_router@0.6.4/mod.ts";
 import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const port = 8080;
