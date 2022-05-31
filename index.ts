@@ -126,7 +126,9 @@ class Router<Ctx extends Context = Context> {
       if (el.regex && el.regex.test(url)) {
         try {
           url = decodeURI(url);
-        } catch (_e) { /* noop */ }
+        } catch (e) {
+          console.warn(e.message);
+        }
         params = el.regex.exec(url).groups || {};
         fns = el.fns;
         path = el.path;
